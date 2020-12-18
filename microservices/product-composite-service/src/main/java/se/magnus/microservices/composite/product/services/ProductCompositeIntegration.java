@@ -43,13 +43,13 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
         ObjectMapper mapper,
 
         @Value("${app.product-service.host}") String productServiceHost,
-        @Value("${app.product-service.port") int productServicePort,
+        @Value("${app.product-service.port}") int productServicePort,
 
-        @Value("${app.recommendation-service.host") String recommendationServiceHost,
-        @Value("${app.recommendation-service.port") int recommendationServicePort,
+        @Value("${app.recommendation-service.host}") String recommendationServiceHost,
+        @Value("${app.recommendation-service.port}") int recommendationServicePort,
 
-        @Value("${app.review-service.host") String reviewServiceHost,
-        @Value("${app.review-service.port") int reviewServicePort
+        @Value("${app.review-service.host}") String reviewServiceHost,
+        @Value("${app.review-service.port}") int reviewServicePort
     ) {
         this.restTemplate = restTemplate;
         this.mapper = mapper;
@@ -115,7 +115,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
             LOG.debug("Found {} reviews for a product with id: {}", reviews.size(), productId);
             return reviews;
         } catch (Exception ex) {
-            LOG.warn("Got an exception while requesting reviews, return zero revies: {}", ex.getMessage());
+            LOG.warn("Got an exception while requesting reviews, return zero reviews: {}", ex.getMessage());
             return new ArrayList<>();
         }
     }
