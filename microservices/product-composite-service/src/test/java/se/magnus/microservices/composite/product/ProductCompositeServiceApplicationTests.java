@@ -52,11 +52,6 @@ public class ProductCompositeServiceApplicationTests {
 	}
 
 	@Test
-	public void contextLoads() {
-
-	}
-
-	@Test
 	public void getProductById() {
 		client.get()
 				.uri("/product-composite/" + PRODUCT_ID_OK)
