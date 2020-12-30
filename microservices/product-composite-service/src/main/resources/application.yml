@@ -13,3 +13,10 @@ app:
   review-service:
     host: localhost
     port: 8003
+
+---
+
+spring:
+  profiles: docker
+server:
+  port: 8080
