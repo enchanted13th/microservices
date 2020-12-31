@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 : ${HOST=localhost}
-: ${PORT=8000}
+: ${PORT=8080}
 
 function assertCurl() {
   local expectedHttpCode=$1
