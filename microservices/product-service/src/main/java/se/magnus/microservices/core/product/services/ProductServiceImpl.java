@@ -1,6 +1,6 @@
 package se.magnus.microservices.core.product.services;
 
-import com.mongodb.DuplicateKeyException;
+import org.springframework.dao.DuplicateKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,17 +17,17 @@ import se.magnus.util.http.ServiceUtil;
 public class ProductServiceImpl implements ProductService {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceUtil.class);
 
-    private final ServiceUtil serviceUtil;
-
     private final ProductRepository repository;
 
     private final ProductMapper mapper;
 
+    private final ServiceUtil serviceUtil;
+
     @Autowired
-    public ProductServiceImpl(ServiceUtil serviceUtil, ProductRepository repository, ProductMapper mapper) {
-        this.serviceUtil = serviceUtil;
+    public ProductServiceImpl(ProductRepository repository, ProductMapper mapper, ServiceUtil serviceUtil) {
         this.repository = repository;
         this.mapper = mapper;
+        this.serviceUtil = serviceUtil;
     }
 
     @Override

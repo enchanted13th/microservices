@@ -1,6 +1,6 @@
 package se.magnus.microservices.core.recommendation.services;
 
-import com.mongodb.DuplicateKeyException;
+import org.springframework.dao.DuplicateKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,17 +19,17 @@ import java.util.List;
 public class RecommendationServiceImpl implements RecommendationService {
     private static final Logger LOG = LoggerFactory.getLogger(RecommendationServiceImpl.class);
 
-    private final ServiceUtil serviceUtil;
-
     private final RecommendationRepository repository;
 
     private final RecommendationMapper mapper;
 
+    private final ServiceUtil serviceUtil;
+
     @Autowired
-    public RecommendationServiceImpl(ServiceUtil serviceUtil, RecommendationRepository repository, RecommendationMapper mapper) {
-        this.serviceUtil = serviceUtil;
+    public RecommendationServiceImpl(RecommendationRepository repository, RecommendationMapper mapper, ServiceUtil serviceUtil) {
         this.repository = repository;
         this.mapper = mapper;
+        this.serviceUtil = serviceUtil;
     }
 
     @Override
@@ -41,7 +41,7 @@ public class RecommendationServiceImpl implements RecommendationService {
             LOG.debug("createRecommendation: created a recommendation entity: {}/{}", body.getProductId(), body.getRecommendationId());
             return mapper.entityToApi(newEntity);
         } catch (DuplicateKeyException dke) {
-            throw new InvalidInputException("Duplicate key, Product Id: " + body.getProductId() + ", Reccomendation Id: " + body.getRecommendationId());
+            throw new InvalidInputException("Duplicate key, Product Id: " + body.getProductId() + ", Recommendation Id: " + body.getRecommendationId());
         }
     }
 
