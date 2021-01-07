@@ -25,9 +25,9 @@ import java.util.List;
 
 import static org.springframework.http.HttpMethod.GET;
 
-
 @Component
 public class ProductCompositeIntegration implements ProductService, RecommendationService, ReviewService {
+
     private static final Logger LOG = LoggerFactory.getLogger(ProductCompositeIntegration.class);
 
     private final RestTemplate restTemplate;
@@ -39,24 +39,25 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
     @Autowired
     public ProductCompositeIntegration(
-        RestTemplate restTemplate,
-        ObjectMapper mapper,
+            RestTemplate restTemplate,
+            ObjectMapper mapper,
 
-        @Value("${app.product-service.host}") String productServiceHost,
-        @Value("${app.product-service.port}") int productServicePort,
+            @Value("${app.product-service.host}") String productServiceHost,
+            @Value("${app.product-service.port}") int    productServicePort,
 
-        @Value("${app.recommendation-service.host}") String recommendationServiceHost,
-        @Value("${app.recommendation-service.port}") int recommendationServicePort,
+            @Value("${app.recommendation-service.host}") String recommendationServiceHost,
+            @Value("${app.recommendation-service.port}") int    recommendationServicePort,
 
-        @Value("${app.review-service.host}") String reviewServiceHost,
-        @Value("${app.review-service.port}") int reviewServicePort
+            @Value("${app.review-service.host}") String reviewServiceHost,
+            @Value("${app.review-service.port}") int    reviewServicePort
     ) {
+
         this.restTemplate = restTemplate;
         this.mapper = mapper;
 
-        productServiceUrl        = "http://" + productServiceHost + ":" + productServicePort + "/product/";
-        recommendationServiceUrl = "http://" + recommendationServiceHost + ":" + recommendationServicePort + "/recommendation?productId=";
-        reviewServiceUrl         = "http://" + reviewServiceHost + ":" + reviewServicePort + "/review?productId=";
+        productServiceUrl        = "http://" + productServiceHost + ":" + productServicePort + "/product";
+        recommendationServiceUrl = "http://" + recommendationServiceHost + ":" + recommendationServicePort + "/recommendation";
+        reviewServiceUrl         = "http://" + reviewServiceHost + ":" + reviewServicePort + "/review";
     }
 
     @Override
@@ -69,6 +70,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
             LOG.debug("Created a product with id: {}", product.getProductId());
 
             return product;
+
         } catch (HttpClientErrorException ex) {
             throw handleHttpClientException(ex);
         }
@@ -84,6 +86,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
             LOG.debug("Found a product with id: {}", product.getProductId());
 
             return product;
+
         } catch (HttpClientErrorException ex) {
             throw handleHttpClientException(ex);
         }
@@ -94,7 +97,9 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
         try {
             String url = productServiceUrl + "/" + productId;
             LOG.debug("Will call the deleteProduct API on URL: {}", url);
+
             restTemplate.delete(url);
+
         } catch (HttpClientErrorException ex) {
             throw handleHttpClientException(ex);
         }
@@ -110,6 +115,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
             LOG.debug("Created a recommendation with id: {}", recommendation.getProductId());
 
             return recommendation;
+
         } catch (HttpClientErrorException ex) {
             throw handleHttpClientException(ex);
         }
@@ -125,6 +131,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
             LOG.debug("Found {} recommendations for a product with id: {}", recommendations.size(), productId);
             return recommendations;
+
         } catch (Exception ex) {
             LOG.warn("Got an exception while requesting recommendations, return zero recommendations: {}", ex.getMessage());
             return new ArrayList<>();
@@ -138,6 +145,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
             LOG.debug("Will call the deleteRecommendations API on URL: {}", url);
 
             restTemplate.delete(url);
+
         } catch (HttpClientErrorException ex) {
             throw handleHttpClientException(ex);
         }
@@ -153,6 +161,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
             LOG.debug("Created a review with id: {}", review.getProductId());
 
             return review;
+
         } catch (HttpClientErrorException ex) {
             throw handleHttpClientException(ex);
         }
@@ -168,6 +177,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
             LOG.debug("Found {} reviews for a product with id: {}", reviews.size(), productId);
             return reviews;
+
         } catch (Exception ex) {
             LOG.warn("Got an exception while requesting reviews, return zero reviews: {}", ex.getMessage());
             return new ArrayList<>();
@@ -181,6 +191,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
             LOG.debug("Will call the deleteReviews API on URL: {}", url);
 
             restTemplate.delete(url);
+
         } catch (HttpClientErrorException ex) {
             throw handleHttpClientException(ex);
         }
@@ -188,10 +199,11 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
     private RuntimeException handleHttpClientException(HttpClientErrorException ex) {
         switch (ex.getStatusCode()) {
+
             case NOT_FOUND:
                 return new NotFoundException(getErrorMessage(ex));
 
-            case UNPROCESSABLE_ENTITY:
+            case UNPROCESSABLE_ENTITY :
                 return new InvalidInputException(getErrorMessage(ex));
 
             default:

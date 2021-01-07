@@ -11,7 +11,7 @@ spring.data.mongodb:
 logging:
   level:
     root: INFO
-    se.magnus.microservices: DEBUG
+    se.magnu: DEBUG
     org.springframework.data.mongodb.core.MongoTemplate: DEBUG
 
 ---
