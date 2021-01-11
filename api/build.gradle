@@ -14,7 +14,6 @@ plugins {
 	id "io.spring.dependency-management" version "1.0.9.RELEASE"
 }
 
-
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
@@ -24,7 +23,6 @@ sourceCompatibility = 1.8
 
 repositories {
 	mavenCentral()
-	maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/' }
 }
 
 dependencies {

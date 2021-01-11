@@ -7,20 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit4.SpringRunner;
+import reactor.test.StepVerifier;
 import se.magnus.microservices.core.product.persistence.ProductEntity;
 import se.magnus.microservices.core.product.persistence.ProductRepository;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static java.util.stream.IntStream.rangeClosed;
-import static org.junit.Assert.*;
-import static org.springframework.data.domain.Sort.Direction.ASC;
 
 @RunWith(SpringRunner.class)
 @DataMongoTest
@@ -30,6 +20,97 @@ public class PersistenceTests {
 
     private ProductEntity savedEntity;
 
+    @Before
+    public void setUpDb() {
+        StepVerifier.create(repository.deleteAll()).verifyComplete();
+
+        ProductEntity entity = new ProductEntity(1, "n", 1);
+        StepVerifier.create(repository.save(entity))
+                .expectNextMatches(createdEntity -> {
+                    savedEntity = createdEntity;
+                    return areProductEqual(entity, savedEntity);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    public void create() {
+        ProductEntity newEntity = new ProductEntity(2, "n", 2);
+
+        StepVerifier.create(repository.save(newEntity))
+                .expectNextMatches(createdEntity -> newEntity.getProductId() == createdEntity.getProductId())
+                .verifyComplete();
+
+        StepVerifier.create(repository.findById(newEntity.getId()))
+                .expectNextMatches(foundEntity -> areProductEqual(newEntity, foundEntity))
+                .verifyComplete();
+
+        StepVerifier.create(repository.count()).expectNext(2l).verifyComplete();
+    }
+
+    @Test
+    public void update() {
+        savedEntity.setName("n2");
+
+        StepVerifier.create(repository.save(savedEntity))
+                .expectNextMatches(updatedEntity -> updatedEntity.getName().equals("n2"))
+                .verifyComplete();
+
+        StepVerifier.create(repository.findById(savedEntity.getId()))
+                .expectNextMatches(foundEntity ->
+                        foundEntity.getVersion() == 1 &&
+                        foundEntity.getName().equals("n2"))
+                .verifyComplete();
+    }
+
+    @Test
+    public void delete() {
+        StepVerifier.create(repository.delete(savedEntity)).verifyComplete();
+        StepVerifier.create(repository.existsById(savedEntity.getId())).expectNext(false).verifyComplete();
+    }
+
+    @Test
+    public void getByProductId() {
+        StepVerifier.create(repository.findByProductId(savedEntity.getProductId()))
+                .expectNextMatches(foundEntity -> areProductEqual(savedEntity, foundEntity))
+                .verifyComplete();
+    }
+
+    @Test
+    public void duplicateError() {
+        ProductEntity entity = new ProductEntity(savedEntity.getProductId(), "n", 1);
+        StepVerifier.create(repository.save(entity)).expectError(DuplicateKeyException.class).verify();
+    }
+
+    @Test
+    public void optimisticLockError() {
+        ProductEntity entity1 = repository.findById(savedEntity.getId()).block();
+        ProductEntity entity2 = repository.findById(savedEntity.getId()).block();
+
+        entity1.setName("n1");
+        repository.save(entity1).block();
+
+        StepVerifier.create(repository.save(entity2)).expectError(OptimisticLockingFailureException.class).verify();
+
+        StepVerifier.create(repository.findById(savedEntity.getId()))
+                .expectNextMatches(foundEntity ->
+                        foundEntity.getVersion() == 1 &&
+                        foundEntity.getName().equals("n1"))
+                .verifyComplete();
+    }
+
+    private boolean areProductEqual(ProductEntity expectedEntity, ProductEntity actualEntity) {
+        return
+            (expectedEntity.getId().equals(actualEntity.getId())) &&
+            (expectedEntity.getVersion().equals(actualEntity.getVersion())) &&
+            (expectedEntity.getProductId() == actualEntity.getProductId()) &&
+            (expectedEntity.getName().equals(actualEntity.getName())) &&
+            (expectedEntity.getWeight() == actualEntity.getWeight());
+
+
+    }
+
+    /* JPA Blocking Test
     @Before
     public void setUpDb() {
         repository.deleteAll();
@@ -134,4 +215,5 @@ public class PersistenceTests {
         assertEquals(expectedEntity.getName(), actualEntity.getName());
         assertEquals(expectedEntity.getWeight(), actualEntity.getWeight());
     }
+    */
 }
