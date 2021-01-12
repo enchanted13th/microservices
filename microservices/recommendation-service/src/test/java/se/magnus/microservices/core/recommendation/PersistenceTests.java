@@ -59,7 +59,7 @@ public class PersistenceTests {
     @Test
     public void delete() {
         repository.delete(savedEntity).block();
-        assertFalse(repository.existsById(savedEntity.getId()).block();
+        assertFalse(repository.existsById(savedEntity.getId()).block());
     }
 
     @Test

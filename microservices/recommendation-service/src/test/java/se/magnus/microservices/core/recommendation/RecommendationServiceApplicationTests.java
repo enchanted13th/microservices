@@ -28,6 +28,8 @@ public class RecommendationServiceApplicationTests {
 	private RecommendationRepository repository;
 
 
+
+	/** JPA Blocking Test
 	@Before
 	public void setupDb() {
 		repository.deleteAll();
@@ -129,4 +131,5 @@ public class RecommendationServiceApplicationTests {
 				.expectStatus().isEqualTo(expectedStatus)
 				.expectBody();
 	}
+	*/
 }
