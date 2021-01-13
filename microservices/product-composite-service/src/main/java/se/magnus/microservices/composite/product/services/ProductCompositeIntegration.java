@@ -153,6 +153,10 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
         return getHealth(recommendationServiceUrl);
     }
 
+    public Mono<Health> getReviewHealth() {
+        return getHealth(reviewServiceUrl);
+    }
+
     public Mono<Health> getHealth(String url) {
         url += "/actuator/health";
         LOG.debug("Will call the Health API on URL: {}", url);
