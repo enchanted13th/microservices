@@ -1,17 +1,15 @@
-server:
-  port: 8002
-  error:
-    include-message: always
+server.port: 8002
+server.error.include-message: always
 
 spring.data.mongodb:
   host: localhost
   port: 27017
   database: recommendation-db
 
-spring.cloud.strea:
+spring.cloud.stream:
   defaultBinder: rabbit
   default.contentType: application/json
-  buildings.input:
+  bindings.input:
     destination: recommendations
     group: recommendationsGroup
 
@@ -46,24 +44,13 @@ logging:
 
 management.endpoint.health.show-details: "ALWAYS"
 management.endpoints.web.exposure.include: "*"
-
 ---
+spring.profiles: docker
 
-spring:
-  profiles: docker
+server.port: 8080
 
-  data:
-    mongodb:
-      host: mongodb
+spring.data.mongodb.host: mongodb
 
-  rabbitmq:
-    host: rabbitmq
+spring.rabbitmq.host: rabbitmq
 
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: kafka
-
-server:
-  port: 8080
+spring.cloud.stream.kafka.binder.brokers: kafka

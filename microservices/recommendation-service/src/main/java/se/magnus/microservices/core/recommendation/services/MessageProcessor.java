@@ -13,6 +13,7 @@ import se.magnus.util.exceptions.EventProcessingException;
 
 @EnableBinding(Sink.class)
 public class MessageProcessor {
+
     private static final Logger LOG = LoggerFactory.getLogger(MessageProcessor.class);
 
     private final RecommendationService recommendationService;
@@ -24,9 +25,11 @@ public class MessageProcessor {
 
     @StreamListener(target = Sink.INPUT)
     public void process(Event<Integer, Recommendation> event) {
+
         LOG.info("Process message created at {}...", event.getEventCreatedAt());
 
         switch (event.getEventType()) {
+
             case CREATE:
                 Recommendation recommendation = event.getData();
                 LOG.info("Create recommendation with ID: {}/{}", recommendation.getProductId(), recommendation.getRecommendationId());
@@ -35,7 +38,7 @@ public class MessageProcessor {
 
             case DELETE:
                 int productId = event.getKey();
-                LOG.info("Delete recommendations with ProductId: {}", productId);
+                LOG.info("Delete recommendations with ProductID: {}", productId);
                 recommendationService.deleteRecommendations(productId);
                 break;
 
