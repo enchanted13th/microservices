@@ -29,7 +29,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static reactor.core.publisher.Mono.just;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(webEnvironment=RANDOM_PORT, properties = {"eureka.client.enabled=false"})
 public class ProductCompositeServiceApplicationTests {
 
 	private static final int PRODUCT_ID_OK = 1;

@@ -45,6 +45,12 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  eureka:
+    build: ../eureka-server
+    mem_limit: 350m
+    ports:
+      - "8761:8761"
+
   mongodb:
     image: mongo:3.6.9
     mem_limit: 350m
