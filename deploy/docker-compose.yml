@@ -37,8 +37,6 @@ services:
   product-composite:
     build: ../microservices/product-composite-service
     mem_limit: 350m
-    ports:
-      - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
@@ -46,10 +44,16 @@ services:
         condition: service_healthy
 
   eureka:
-    build: ../eureka-server
+    build: ../spring-cloud/eureka-server
+    mem_limit: 350m
+
+  gateway:
+    build: ../spring-cloud/gateway
     mem_limit: 350m
     ports:
-      - "8761:8761"
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
 
   mongodb:
     image: mongo:3.6.9
