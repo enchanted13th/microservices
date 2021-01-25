@@ -3,6 +3,10 @@ package se.magnus.microservices.composite.product.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import se.magnus.api.composite.product.*;
@@ -11,6 +15,7 @@ import se.magnus.api.core.recommendation.Recommendation;
 import se.magnus.api.core.review.Review;
 import se.magnus.util.http.ServiceUtil;
 
+import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,8 +33,14 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     }
 
     @Override
-    public void createCompositeProduct(ProductAggregate body) {
+    public Mono<Void> createCompositeProduct(ProductAggregate body) {
+        return ReactiveSecurityContextHolder.getContext().doOnSuccess(sc -> internalCreateCompositeProduct(sc, body)).then();
+    }
+
+    private void internalCreateCompositeProduct(SecurityContext sc, ProductAggregate body) {
         try {
+            logAuthorizationInfo(sc);
+
             LOG.debug("createCompositeProduct: creates a new composite entity for productId: {}", body.getProductId());
 
             Product product = new Product(body.getProductId(), body.getName(), body.getWeight(), null);
@@ -69,8 +80,14 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     }
 
     @Override
-    public void deleteCompositeProduct(int productId) {
+    public Mono<Void> deleteCompositeProduct(int productId) {
+        return ReactiveSecurityContextHolder.getContext().doOnSuccess(sc -> internalDeleteCompositeProduct(sc, productId)).then();
+    }
+
+    private void internalDeleteCompositeProduct(SecurityContext sc, int productId) {
         try {
+            logAuthorizationInfo(sc);
+
             LOG.debug("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
 
             integration.deleteProduct(productId);
@@ -109,5 +126,30 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
         ServiceAddresses serviceAddresses = new ServiceAddresses(serviceAddress, productAddress, reviewAddress, recommendationAddress);
 
         return new ProductAggregate(productId, name, weight, recommendationSummaries, reviewSummaries, serviceAddresses);
+    }
+
+    private void logAuthorizationInfo(SecurityContext sc) {
+        if (sc != null && sc.getAuthentication() != null && sc.getAuthentication() instanceof JwtAuthenticationToken) {
+            Jwt jwtToken = ((JwtAuthenticationToken) sc.getAuthentication()).getToken();
+            logAuthorizationInfo(jwtToken);
+        } else {
+            LOG.warn("No JWT based Authentication supplied, running tests are we?");
+        }
+    }
+
+    private void logAuthorizationInfo(Jwt jwtToken) {
+        if (jwtToken == null) {
+            LOG.warn("No JWT supplied, running tests are we?");
+        } else {
+            if (LOG.isDebugEnabled()) {
+                URL issuer = jwtToken.getIssuer();
+                List<String> audience = jwtToken.getAudience();
+                Object subject = jwtToken.getClaims().get("sub");
+                Object scopes = jwtToken.getClaims().get("scope");
+                Object expires = jwtToken.getClaims().get("exp");
+
+                LOG.debug("Authorization info: Subject {}, scopes: {}, issuer: {}, audience: {}", subject, scopes, expires, issuer, audience);
+            }
+        }
     }
 }

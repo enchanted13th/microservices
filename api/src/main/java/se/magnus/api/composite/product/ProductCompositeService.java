@@ -33,7 +33,7 @@ public interface ProductCompositeService {
             value    = "/product-composite",
             consumes = "application/json"
     )
-    void createCompositeProduct(@RequestBody ProductAggregate body);
+    Mono<Void> createCompositeProduct(@RequestBody ProductAggregate body);
 
     /**
      * Sample usage: curl $HOST:$PORT/product-composite/1
@@ -75,5 +75,5 @@ public interface ProductCompositeService {
             }
     )
     @DeleteMapping(value = "/product-composite/{productId}")
-    void deleteCompositeProduct(@PathVariable int productId);
+    Mono<Void> deleteCompositeProduct(@PathVariable int productId);
 }

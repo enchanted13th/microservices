@@ -3,6 +3,7 @@ package se.magnus.springcloud.eurekaserver;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
@@ -15,8 +16,18 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 public class EurekaServerApplicationTests {
-    @Autowired
     private TestRestTemplate testRestTemplate;
+
+    @Value("${app.eureka-username}")
+    private String username;
+
+    @Value("${app.eureka-password}")
+    private String password;
+
+    @Autowired
+    public void setTestRestTemplate(TestRestTemplate testRestTemplate) {
+        this.testRestTemplate = testRestTemplate.withBasicAuth(username, password);
+    }
 
     @Test
     public void catalogLoads() {
