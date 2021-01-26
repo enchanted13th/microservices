@@ -8,6 +8,7 @@ spring.application.name: product
 app:
   eureka-username: u
   eureka-password: p
+  eureka-server: localhost
 
 eureka:
   client:

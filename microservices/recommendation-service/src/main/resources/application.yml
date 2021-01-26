@@ -6,6 +6,7 @@ spring.application.name: recommendation
 app:
   eureka-username: u
   eureka-password: p
+  eureka-server: localhost
 
 eureka:
   client:
