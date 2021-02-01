@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 : ${HOST=localhost}
-: ${PORT=8080}
+: ${PORT=8443}
 
 : ${PROD_ID_REVS_RECS=2}
 : ${PROD_ID_NOT_FOUND=14}
@@ -121,8 +121,8 @@ function recreateComposite() {
   local productId=$1
   local composite=$2
 
-  assertCurl 200 "curl $AUTH -X DELETE -k http://$HOST:$PORT/product-composite/${productId} -s"
-  curl -X POST -k http://$HOST:$PORT/product-composite -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" --data "$composite"
+  assertCurl 200 "curl $AUTH -X DELETE -k https://$HOST:$PORT/product-composite/${productId} -s"
+  curl -X POST -k https://$HOST:$PORT/product-composite -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" --data "$composite"
 }
 
 function setupTestdata() {
@@ -186,13 +186,13 @@ setupTestdata
 waitForMessageProcessing
 
 # Verify that a normal request works
-assertCurl 200 "curl -k http://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $AUTH -s"
+assertCurl 200 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $AUTH -s"
 assertEqual "$PROD_ID_REVS_RECS" $(echo $RESPONSE | jq .productId)
 assertEqual 3 $(echo $RESPONSE | jq ".recommendations | length")
 assertEqual 3 $(echo $RESPONSE | jq ".reviews | length")
 
 # Verify that a 404 error
-assertCurl 404 "curl -k http://$HOST:$PORT/product-composite/$PROD_ID_NOT_FOUND $AUTH -s"
+assertCurl 404 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_NOT_FOUND $AUTH -s"
 
 # Verify that no recommendations
 assertCurl 200 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_NO_REVS $AUTH -s"
@@ -219,10 +219,10 @@ assertCurl 401 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS
 
 # Verify that the reader
 READER_ACCESS_TOKEN=$(curl -k https://reader:secret@$HOST:$PORT/oauth/token -d grant_type=password -d username=magnus -d password=password -s | jq .access_token -r)
-READER_AUTH="-h \"Authorization: Bearer $READER_ACCESS_TOKEN\""
+READER_AUTH="-H \"Authorization: Bearer $READER_ACCESS_TOKEN\""
 
 assertCurl 200 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $READER_AUTH -s"
-assertCurl 403 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $READER_AUTH -x DELETE -s"
+assertCurl 403 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $READER_AUTH -X DELETE -s"
 
 echo "End, all tests OK:" `date`
 
