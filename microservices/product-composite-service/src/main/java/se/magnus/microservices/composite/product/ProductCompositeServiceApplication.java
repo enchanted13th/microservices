@@ -18,7 +18,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 import java.util.LinkedHashMap;
 
 import static java.util.Collections.emptyList;
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 import static springfox.documentation.builders.RequestHandlerSelectors.basePackage;
 import static springfox.documentation.spi.DocumentationType.SWAGGER_2;
 
@@ -43,8 +43,10 @@ public class ProductCompositeServiceApplication {
 				.apis(basePackage("se.magnus.microservices.composite.product"))
 				.paths(PathSelectors.any())
 				.build()
-				.globalResponseMessage(GET, emptyList())
-				.apiInfo(new ApiInfo(
+					.globalResponseMessage(POST, emptyList())
+					.globalResponseMessage(GET, emptyList())
+					.globalResponseMessage(DELETE, emptyList())
+					.apiInfo(new ApiInfo(
 						apiTitle,
 						apiDescription,
 						apiVersion,
@@ -54,23 +56,6 @@ public class ProductCompositeServiceApplication {
 						apiLicenseUrl,
 						emptyList()
 						));
-	}
-
-	@Autowired
-	HealthAggregator healthAggregator;
-
-	@Autowired
-	ProductCompositeIntegration integration;
-
-	@Bean
-	ReactiveHealthIndicator coreServices() {
-		ReactiveHealthIndicatorRegistry registry = new DefaultReactiveHealthIndicatorRegistry(new LinkedHashMap<>());
-
-		registry.register("product", () -> integration.getProductHealth());
-		registry.register("recommendation", () -> integration.getRecommendationHealth());
-		registry.register("review", () -> integration.getReviewHealth());
-
-		return new CompositeReactiveHealthIndicator(healthAggregator, registry);
 	}
 
 	@Bean
