@@ -49,7 +49,7 @@ function assertEqual() {
 
 function testUrl() {
   url=$@
-  if curl $url -ks -f -o /dev/null
+  if $url -ks -f -o /dev/null
   then
     return 0
   else

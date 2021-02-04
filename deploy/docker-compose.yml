@@ -62,12 +62,12 @@ services:
   gateway:
     build: ../spring-cloud/gateway
     mem_limit: 350m
-    ports:
-      - "8443:8443"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
       - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
+    ports:
+      - "8443:8443"
 
   auth-server:
     build: ../spring-cloud/authorization-server
@@ -80,13 +80,14 @@ services:
   config-server:
     build: ../spring-cloud/config-server
     mem_limit: 350m
-    volumes:
-      - $PWD/../config-repo:/config-repo
     environment:
       - SPRING_PROFILES_ACTIVE=docker,native
       - ENCRYPT_KEY=${CONFIG_SERVER_ENCRYPT_KEY}
-      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
-      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
+      - SPRING_SECURITY_USER_NAME=${CONFIG_SERVER_USR}
+      - SPRING_SECURITY_USER_PASSWORD=${CONFIG_SERVER_PWD}
+    volumes:
+      - $PWD/config-repo:/config-repo
+
 
   mongodb:
     image: mongo:3.6.9
@@ -96,7 +97,7 @@ services:
     command: mongod --smallfiles
     healthcheck:
       test: "mongo --eval 'db.stats().ok'"
-      interval: 10s
+      interval: 20s
       timeout: 5s
       retries: 10
 
@@ -112,7 +113,7 @@ services:
       - MYSQL_PASSWORD=pwd
     healthcheck:
       test: "/usr/bin/mysql --user=user --password=pwd --execute \"SHOW DATABASES;\""
-      interval: 10s
+      interval: 20s
       timeout: 5s
       retries: 10
 
@@ -124,6 +125,6 @@ services:
       - 15672:15672
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
-      interval: 10s
+      interval: 20s
       timeout: 5s
       retries: 10

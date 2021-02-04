@@ -12,7 +12,6 @@ spring:
     uri: http://${CONFIG_SERVER_USR}:${CONFIG_SERVER_PWD}@${app.config-server}:8888
 
 ---
-
 spring.profiles: docker
 
 app.config-server: config-server
