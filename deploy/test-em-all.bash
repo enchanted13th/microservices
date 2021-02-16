@@ -4,7 +4,7 @@
 : ${PORT=8443}
 
 : ${PROD_ID_REVS_RECS=2}
-: ${PROD_ID_NOT_FOUND=14}
+: ${PROD_ID_NOT_FOUND=13}
 : ${PROD_ID_NO_RECS=114}
 : ${PROD_ID_NO_REVS=214}
 
@@ -127,37 +127,86 @@ function recreateComposite() {
 
 function setupTestdata() {
 
-    body="{\"productId\":$PROD_ID_NO_RECS"
-    body+=\
+  body="{\"productId\":$PROD_ID_NO_RECS"
+  body+=\
 ',"name":"product name A","weight":100, "reviews":[
     {"reviewId":1,"author":"author 1","subject":"subject 1","content":"content 1"},
     {"reviewId":2,"author":"author 2","subject":"subject 2","content":"content 2"},
     {"reviewId":3,"author":"author 3","subject":"subject 3","content":"content 3"}
 ]}'
-    recreateComposite "$PROD_ID_NO_RECS" "$body"
+  recreateComposite "$PROD_ID_NO_RECS" "$body"
 
-    body="{\"productId\":$PROD_ID_NO_REVS"
-    body+=\
+  body="{\"productId\":$PROD_ID_NO_REVS"
+  body+=\
 ',"name":"product name B","weight":200, "recommendations":[
     {"recommendationId":1,"author":"author 1","rate":1,"content":"content 1"},
     {"recommendationId":2,"author":"author 2","rate":2,"content":"content 2"},
     {"recommendationId":3,"author":"author 3","rate":3,"content":"content 3"}
 ]}'
-    recreateComposite "$PROD_ID_NO_REVS" "$body"
+  recreateComposite "$PROD_ID_NO_REVS" "$body"
 
-    body="{\"productId\":$PROD_ID_REVS_RECS"
-    body+=\
+  body="{\"productId\":$PROD_ID_REVS_RECS"
+  body+=\
 ',"name":"product name C","weight":300, "recommendations":[
-        {"recommendationId":1,"author":"author 1","rate":1,"content":"content 1"},
-        {"recommendationId":2,"author":"author 2","rate":2,"content":"content 2"},
-        {"recommendationId":3,"author":"author 3","rate":3,"content":"content 3"}
-    ], "reviews":[
-        {"reviewId":1,"author":"author 1","subject":"subject 1","content":"content 1"},
-        {"reviewId":2,"author":"author 2","subject":"subject 2","content":"content 2"},
-        {"reviewId":3,"author":"author 3","subject":"subject 3","content":"content 3"}
-    ]}'
-    recreateComposite 1 "$body"
+      {"recommendationId":1,"author":"author 1","rate":1,"content":"content 1"},
+      {"recommendationId":2,"author":"author 2","rate":2,"content":"content 2"},
+      {"recommendationId":3,"author":"author 3","rate":3,"content":"content 3"}
+  ], "reviews":[
+      {"reviewId":1,"author":"author 1","subject":"subject 1","content":"content 1"},
+      {"reviewId":2,"author":"author 2","subject":"subject 2","content":"content 2"},
+      {"reviewId":3,"author":"author 3","subject":"subject 3","content":"content 3"}
+  ]}'
+  recreateComposite 1 "$body"
 
+}
+
+function testCircuitBreaker() {
+
+  echo "Start Circuit Breaker tests!"
+
+  EXEC="docker run --rm -it --network=my-network alpine"
+
+  # Endpoint to verify that the circuit breaker is closed
+  assertEqual "CLOSED" "$($EXEC wget product-composite:8080/actuator/health -qO - | jq -r .components.circuitBreakers.details.product.details.state)"
+
+  # Open the circuit breaker
+  assertCurl 500 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS?delay=3 $AUTH -s"
+  message=$(echo $RESPONSE | jq -r .message)
+  assertEqual "Did not observe any item or terminal signal within 2000ms" "${message:0:57}"
+
+  # Verify that the circuit breaker now is open by running the slow call again
+  assertCurl 200 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS?delay=3 $AUTH -s"
+  assertEqual "Fallback product2" "$(echo "$RESPONSE" | jq -r .name)"
+
+  # Verify that the circuit breaker is open by running a normal call
+  assertCurl 200 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $AUTH -s"
+  assertEqual "Fallback product2" "$(echo "$RESPONSE" | jq -r .name)"
+
+  # Verify that a 404 error is returned for a non existing productId ($PROD_ID_NOT_FOUND)
+  assertCurl 404 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_NOT_FOUND $AUTH -s"
+  assertEqual "Product Id: $PROD_ID_NOT_FOUND not found in fallback cache!" "$(echo $RESPONSE | jq -r .message)"
+
+  # Wait for the circuit breaker to transition to half open state
+  echo "Will sleep for 5 sec waiting for the CB to go Half Open..."
+  sleep 5
+
+  # Verify that the circuit breaker is in half open state
+  assertEqual "HALF_OPEN" "$($EXEC wget product-composite:8080/actuator/health -qO - | jq -r .components.circuitBreakers.details.product.details.state)"
+
+  # Close the circuit breaker by running three normal calls in a row
+    for ((n=0; n<3; n++))
+    do
+        assertCurl 200 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $AUTH -s"
+        assertEqual "product name C" "$(echo "$RESPONSE" | jq -r .name)"
+    done
+
+  # Verify that the circuit breaker is in closed state again
+  assertEqual "CLOSED" "$($EXEC wget product-composite:8080/actuator/health -qO - | jq -r .components.circuitBreakers.details.product.details.state)"
+
+  # Verify that the expected state transitions happened in the circuit breaker
+  assertEqual "CLOSED_TO_OPEN" "$($EXEC wget product-composite:8080/actuator/circuitbreakerevents/product/STATE_TRANSITION -qO - | jq -r .circuitBreakerEvents[-3].stateTransition)"
+  assertEqual "OPEN_TO_HALF_OPEN" "$($EXEC wget product-composite:8080/actuator/circuitbreakerevents/product/STATE_TRANSITION -qO - | jq -r .circuitBreakerEvents[-2].stateTransition)"
+  assertEqual "HALF_OPEN_TO_CLOSED" "$($EXEC wget product-composite:8080/actuator/circuitbreakerevents/product/STATE_TRANSITION -qO - | jq -r .circuitBreakerEvents[-1].stateTransition)"
 }
 
 set -e
@@ -223,6 +272,8 @@ READER_AUTH="-H \"Authorization: Bearer $READER_ACCESS_TOKEN\""
 
 assertCurl 200 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $READER_AUTH -s"
 assertCurl 403 "curl -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS $READER_AUTH -X DELETE -s"
+
+testCircuitBreaker
 
 echo "End, all tests OK:" `date`
 
