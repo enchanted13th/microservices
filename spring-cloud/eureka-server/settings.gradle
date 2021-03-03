@@ -1,7 +1,0 @@
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-    }
-}
-
-rootPrject.name = 'eureka-server'
